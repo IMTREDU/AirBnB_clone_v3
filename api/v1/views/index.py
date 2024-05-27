@@ -1,31 +1,33 @@
 #!/usr/bin/python3
 """Flask route that provides JSON status responses"""
 from api.v1.views import app_views
-from flask import jsonify, request
+from flask import Flask, Blueprint, jsonify
 from models import storage
 
 
-@app_views.route('/status', methods=['GET'])
-def status():
+hbnbText = {
+    "amenities": "Amenity",
+    "cities": "City",
+    "places": "Place",
+    "reviews": "Review",
+    "states": "State",
+    "users": "User"
+}
+
+
+@app_views.route('/status', strict_slashes=False)
+def hbnbStatus():
     """Endpoint that returns a status message"""
-    if request.method == 'GET':
-        response = {"status": "OK"}
-        return jsonify(response)
+    return jsonify({"status": "OK"})
 
 
-@app_views.route('/stats', methods=['GET'])
-def stats():
+@app_views.route('/stats', strict_slashes=False)
+def hbnbStats():
     """Endpoint that returns the count of each class type"""
-    if request.method == 'GET':
-        response = {}
-        CLASS_NAMES = {
-            "Amenity": "amenities",
-            "City": "cities",
-            "Place": "places",
-            "Review": "reviews",
-            "State": "states",
-            "User": "users"
-        }
-        for class_name, plural_name in CLASS_NAMES.items():
-            response[plural_name] = storage.count(class_name)
-        return jsonify(response)
+    return_dict = {}
+    for key, value in hbnbText.items():
+        return_dict[key] = storage.count(value)
+    return jsonify(return_dict)
+
+if __name__ == "__main__":
+    pass

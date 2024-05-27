@@ -2,54 +2,27 @@
 """Flask server setup (app variable)"""
 
 from api.v1.views import app_views
-from flask import Flask, jsonify, make_response, render_template, url_for
-from flask_cors import CORS, cross_origin
-from flasgger import Swagger
-from models import storage
 import os
-from werkzeug.exceptions import HTTPException
+from models import storage
+from flask import Flask, Blueprint, jsonify, make_response
+from flask_cors import CORS
 
 
 app = Flask(__name__)
-swagger = Swagger(app)
-
-app.url_map.strict_slashes = False
-
-host = os.getenv('HBNB_API_HOST', '0.0.0.0')
-port = os.getenv('HBNB_API_PORT', 5000)
-
-cors = CORS(app, resources={r'/*': {'origins': host}})
-
 app.register_blueprint(app_views)
+cors = CORS(app, resources={"/*": {"origins": "0.0.0.0"}})
 
 
 @app.teardown_appcontext
-def teardown_db(exception):
-    """Current SQLAlchemy Session"""
+def teardown_appcontext(code):
+    """Teardown"""
     storage.close()
 
 
-@app.errorhandler(Exception)
-def global_error_handler(err):
-    """Global Route to handle All Error"""
-    if isinstance(err, HTTPException):
-        if type(err).__name__ == 'NotFound':
-            err.description = "Not found"
-        message = {'error': err.description}
-        code = err.code
-    else:
-        message = {'error': err}
-        code = 500
-    return make_response(jsonify(message), code)
-
-
-def setup_global_errors():
-    """Updates HTTPException Class"""
-    for cls in HTTPException.__subclasses__():
-        app.register_error_handler(cls, global_error_handler)
-
+@app.errorhandler(404)
+def page_not_found(error):
+    return make_response(jsonify({'error': 'Not found'}), 404)
 
 if __name__ == "__main__":
-    """Main Flask App"""
-    setup_global_errors()
-    app.run(host=host, port=port)
+    app.run(host=os.getenv('HBNB_API_HOST', '0.0.0.0'),
+            port=int(os.getenv('HBNB_API_PORT', '5000')))
